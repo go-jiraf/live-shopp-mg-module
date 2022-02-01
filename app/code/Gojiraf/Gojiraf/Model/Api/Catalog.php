@@ -1,27 +1,22 @@
-<?php
+<?php 
 
-namespace Gojiraf\Gojiraf\Controller\Catalog;
+namespace Gojiraf\Gojiraf\Model\Api;
+use Magento\Framework\Exception\InputException;
 
-use \Magento\Framework\App\Action\Context;
 
-class ProductList extends \Magento\Framework\App\Action\Action
+class Catalog{
 
-{
     private $variantAttributes;
     private $imageHelper;
 
-    public function execute()
-    {
+    public function getProductList($offset){
         $this->imageHelper = \Magento\Framework\App\ObjectManager::getInstance()
             ->get('\Magento\Catalog\Helper\Image');
 
-        $params = $this->getRequest()
-            ->getParams();
-        if (!isset($params["limit"]) || !isset($params["offset"]))
+        //var_dump($offset); die;
+        if (!isset($offset))
         {
-            $this->getResponse()
-                ->setStatusCode(\Magento\Framework\App\Response\Http::STATUS_CODE_400);
-            return $this->displayError("NO_PAGINATION", "Favor de usar los parametros limit y offset.");
+			throw new InputException(__("Favor de usar el parametro [offset]."));
         }
 
         $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
@@ -29,13 +24,10 @@ class ProductList extends \Magento\Framework\App\Action\Action
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('type_id', 'configurable');
         $productCollection->getSelect()
-            ->limit($params["limit"], $params["offset"]);
+            ->limit(25, $offset);
         //echo $productCollection->getSelect()->__toString();
-        if (empty($productCollection->getData()))
-        {
-            $this->getResponse()
-                ->setStatusCode(\Magento\Framework\App\Response\Http::STATUS_CODE_400);
-            return $this->displayError("NO_PRODUCTS", "No se encontraron productos.");
+        if (empty($productCollection->getData())){
+			throw new InputException(__("No se encontraron productos."));
         }
 
         $productList = array(
@@ -115,11 +107,7 @@ class ProductList extends \Magento\Framework\App\Action\Action
             array_push($productList["products"], $productArray);
         }
 
-        $jsonFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Framework\Controller\Result\JsonFactory');
-        $data = $productList;
-        $result = $jsonFactory->create();
-        $response = $result->setData($data);
-        return $response;
+        return $productList;
 
     }
 
@@ -132,14 +120,4 @@ class ProductList extends \Magento\Framework\App\Action\Action
         return $imageUrl;
     }
 
-    public function displayError($errorCode, $message)
-    {
-        $jsonFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Framework\Controller\Result\JsonFactory');
-        $data = ['error_code' => $errorCode, 'message' => $message];
-        $result = $jsonFactory->create();
-        $response = $result->setData($data);
-        return $response;
-    }
-
 }
-
