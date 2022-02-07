@@ -8,15 +8,17 @@ class Catalog{
 
     private $variantAttributes;
     private $imageHelper;
-
-    public function getProductList($offset){
+    private $limit;
+    // rest/V1/gojiraf/productlist/offset/0
+    public function getProductList($page){
+        $this->limit = 25;
         $this->imageHelper = \Magento\Framework\App\ObjectManager::getInstance()
             ->get('\Magento\Catalog\Helper\Image');
 
-        //var_dump($offset); die;
-        if (!isset($offset))
+        //var_dump($page); die;
+        if (!isset($page))
         {
-			throw new InputException(__("Favor de usar el parametro [offset]."));
+			throw new InputException(__("Favor de usar el parametro [page]."));
         }
 
         $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
@@ -24,15 +26,14 @@ class Catalog{
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('type_id', 'configurable');
         $productCollection->getSelect()
-            ->limit(25, $offset);
+            ->limit($this->limit, $page * $this->limit);
         //echo $productCollection->getSelect()->__toString();
         if (empty($productCollection->getData())){
-			throw new InputException(__("No se encontraron productos."));
+            return [];
+			//throw new InputException(__("No se encontraron productos."));
         }
 
-        $productList = array(
-            "products" => []
-        );
+        $productList = array();
         foreach ($productCollection as $productModel)
         {
             $productArray = array(
@@ -104,7 +105,7 @@ class Catalog{
 
             $productArray["price"] = number_format($productModel->getFinalPrice() , 2, ",", "");
             $productArray["imageUrl"] = $this->getProductImage($productModel);
-            array_push($productList["products"], $productArray);
+            array_push($productList, $productArray);
         }
 
         return $productList;
