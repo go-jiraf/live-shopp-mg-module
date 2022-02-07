@@ -10,5 +10,5 @@ interface CatalogInterface
      * @return string
      */
  
-    public function getProductList($offset);
+    public function getProductList($page);
 }
