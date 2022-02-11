@@ -1,12 +1,13 @@
 <?php
  
-namespace Gojiraf\Gojiraf\Controller\Index;
+namespace Gojiraf\Gojiraf\Controller\Cart;
 
 use \Magento\Framework\App\Action\Context;
 
-class Index extends \Magento\Framework\App\Action\Action
+class Redirect extends \Magento\Framework\App\Action\Action
 {
 
+    // gojiraf/cart/redirect?CART_ID=XXXXXXXXXXXXXx
     public function execute()
     {
         $params = $this->getRequest()->getParams();
@@ -58,7 +59,6 @@ class Index extends \Magento\Framework\App\Action\Action
 
     public function redirectSuccess(){
         $message = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Framework\Message\ManagerInterface');
-        $message->addSuccess("Muchas gracias por su compra mediante el LiveCommerce de GoJiraf!");
         $this->getResponse()->setRedirect('/checkout/cart/');
     }
 
