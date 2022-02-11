@@ -6,9 +6,12 @@ interface CatalogInterface
 {
     /**
      * GET for Post api
-     * @param string $value
+     * @param string $page
+     * @param string $limit
+     * @param string $searchTerm
+     * @param mixed[] $ids
      * @return string
      */
  
-    public function getProductList($page);
+    public function getProductList($page, $limit = 10, $searchTerm = NULL, $ids = "");
 }
