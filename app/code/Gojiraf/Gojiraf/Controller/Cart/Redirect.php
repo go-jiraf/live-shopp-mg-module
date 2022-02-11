@@ -59,7 +59,6 @@ class Redirect extends \Magento\Framework\App\Action\Action
 
     public function redirectSuccess(){
         $message = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Framework\Message\ManagerInterface');
-        $message->addSuccess("Muchas gracias por su compra mediante el LiveCommerce de GoJiraf!");
         $this->getResponse()->setRedirect('/checkout/cart/');
     }
 
