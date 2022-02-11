@@ -1,41 +1,64 @@
 <?php 
 
 namespace Gojiraf\Gojiraf\Model\Api;
-use Magento\Framework\Exception\InputException;
+//use Magento\Framework\Exception\InputException;
 
 
 class Catalog{
 
     private $variantAttributes;
     private $imageHelper;
-    private $limit;
-    // rest/V1/gojiraf/productlist/offset/0
-    public function getProductList($page){
-        $this->limit = 25;
-        $this->imageHelper = \Magento\Framework\App\ObjectManager::getInstance()
-            ->get('\Magento\Catalog\Helper\Image');
+    // /rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
+    public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = ""){
 
-        //var_dump($page); die;
-        if (!isset($page))
-        {
-			throw new InputException(__("Favor de usar el parametro [page]."));
-        }
+        $this->imageHelper = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Helper\Image');
 
-        $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
-        $productCollection = $productCollectionFactory->create();
-        $productCollection->addAttributeToSelect('*');
-        $productCollection->addAttributeToFilter('type_id', 'configurable');
-        $productCollection->getSelect()
-            ->limit($this->limit, $page * $this->limit);
-        //echo $productCollection->getSelect()->__toString();
-        if (empty($productCollection->getData())){
+        $productCollection = $this->prepareCollection();
+        $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
+
+        if (empty($filteredCollection->getData())){
             return [];
 			//throw new InputException(__("No se encontraron productos."));
         }
 
         $productList = array();
-        foreach ($productCollection as $productModel)
+        foreach ($filteredCollection as $productModel)
         {
+            $productData = $this->buildProductData($productModel);
+            array_push($productList, $productData);
+        }
+
+        return $productList;
+    }
+
+
+    public function prepareCollection(){
+        $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
+        $productCollection = $productCollectionFactory->create();
+        $productCollection->addAttributeToSelect('*');
+        $productCollection->addAttributeToFilter('type_id', 'configurable');
+        return $productCollection;
+    }
+
+
+    public function filterCollection($productCollection, $page, $limit, $searchTerm, $ids){
+        $offset = ($page == 0 || $page == 1) ? 0 : $page * $limit - 1;
+
+        // Si pide IDs de productos especificos, los filtramos.
+        if (!empty($ids) && $ids != "undefined") {
+            $productCollection->addAttributeToFilter('entity_id', array('in' => explode(",", $ids)));
+        }
+        if (!empty($searchTerm) && $searchTerm != "undefined") {
+            $productCollection->addAttributeToFilter('name', array('like' => "%" .$searchTerm. "%"));
+        }
+        $productCollection->getSelect()
+            ->limit($limit, $offset);
+
+        return $productCollection;
+    }
+
+
+    public function buildProductData($productModel){
             $productArray = array(
                 "id" => $productModel->getId() ,
                 "sku" => $productModel->getSku() ,
@@ -84,9 +107,9 @@ class Catalog{
                 array_push($optionsArray, array(
                     "option" => $option,
                     "sku" => $child->getSku() ,
-                    "price" => number_format($child->getFinalPrice() , 2, ",", "") ,
+                    "price" => (float)number_format($child->getFinalPrice() , 2, ",", "") ,
                     "imageUrl" => $imageUrl,
-                    "originalPrice" => number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "") ,
+                    "originalPrice" => (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", ""),
                     "description" => $child->getName()
                 ));
 
@@ -101,16 +124,13 @@ class Catalog{
             }
 
             //aca las variantOptions
-            array_push($productArray["variantOptions"], $optionsArray);
+            $productArray["variantOptions"] = $optionsArray;
 
-            $productArray["price"] = number_format($productModel->getFinalPrice() , 2, ",", "");
-            $productArray["imageUrl"] = $this->getProductImage($productModel);
-            array_push($productList, $productArray);
-        }
-
-        return $productList;
-
+            $productArray["price"] = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
+            $productArray["imageUrl"] = $this->getProductImage($productModel) ;
+            return $productArray;
     }
+
 
     public function getProductImage($product)
     {
@@ -120,5 +140,4 @@ class Catalog{
             ->getUrl();
         return $imageUrl;
     }
-
 }
