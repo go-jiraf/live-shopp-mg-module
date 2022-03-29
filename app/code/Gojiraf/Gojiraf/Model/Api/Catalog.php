@@ -12,13 +12,14 @@ class Catalog{
     public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = ""){
 
         $this->imageHelper = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Helper\Image');
+        $this->stockRegistry = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\CatalogInventory\Api\StockRegistryInterface');
 
         $productCollection = $this->prepareCollection();
         $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
 
         if (empty($filteredCollection->getData())){
             return [];
-			//throw new InputException(__("No se encontraron productos."));
+            //throw new InputException(__("No se encontraron productos."));
         }
 
         $productList = array();
@@ -33,10 +34,13 @@ class Catalog{
 
 
     public function prepareCollection(){
-        $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
-        $productCollection = $productCollectionFactory->create();
+        $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\Product\LinkFactory');
+        $productCollection = $productCollectionFactory->create()->getProductCollection();
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('type_id', 'configurable');
+        $productCollection->joinField(
+            'qty', 'cataloginventory_stock_item', 'qty', 'product_id=entity_id', '{{table}}.stock_id=1', 'left'
+        );
         return $productCollection;
     }
 
@@ -78,6 +82,11 @@ class Catalog{
                 ->getUsedProducts($productModel);
             foreach ($childProducts as $child)
             {
+                //Si la variante no tiene stock, la ignoramos.
+                $stockStatus = $this->stockRegistry->getStockItem($child->getId());              
+                if ($stockStatus->getData('is_in_stock') == 0 || $stockStatus->getQty() == 0) {
+                    continue;
+                }
                 //Acomodamos datos de las posibles variantes
                 $option = array();
                 foreach ($this->variantAttributes as $attribute)
