@@ -72,6 +72,7 @@ class Catalog{
             $this->variantAttributes = $productModel->getTypeInstance()
                 ->getUsedProductAttributes($productModel);
 
+            $highestPrice = 0;
             $variantsArray = array();
             $optionsArray = array();
             $childProducts = $productModel->getTypeInstance()
@@ -102,14 +103,18 @@ class Catalog{
                 }
 
                 $imageUrl = $this->getProductImage($child);
-
+                $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", "");
+                $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
+                if ($childOriginalPrice > $highestPrice) {
+                    $highestPrice = $childOriginalPrice;
+                }
                 //Acomodamos datos del producto simple
                 array_push($optionsArray, array(
                     "option" => $option,
                     "sku" => $child->getSku() ,
-                    "price" => (float)number_format($child->getFinalPrice() , 2, ",", "") ,
+                    "price" => $childPrice ,
                     "imageUrl" => $imageUrl,
-                    "originalPrice" => (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", ""),
+                    "originalPrice" => $childOriginalPrice,
                     "description" => $child->getName()
                 ));
 
@@ -125,8 +130,8 @@ class Catalog{
 
             //aca las variantOptions
             $productArray["variantOptions"] = $optionsArray;
-
-            $productArray["price"] = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
+            $configProductPrice = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
+            $productArray["price"] =  ($configProductPrice == 0 ) ? $highestPrice : $configProductPrice ;
             $productArray["imageUrl"] = $this->getProductImage($productModel) ;
             return $productArray;
     }
