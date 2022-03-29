@@ -34,13 +34,12 @@ class Catalog{
 
 
     public function prepareCollection(){
-        $productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\Product\LinkFactory');
-        $productCollection = $productCollectionFactory->create()->getProductCollection();
+        $productCollection = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\Collection');
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('type_id', 'configurable');
         $productCollection->joinField(
-            'qty', 'cataloginventory_stock_item', 'qty', 'product_id=entity_id', '{{table}}.stock_id=1', 'left'
-        );
+            'stock_status', 'cataloginventory_stock_status', 'stock_status', 'product_id=entity_id', '{{table}}.stock_id=1', 'left'
+        )->addFieldToFilter('stock_status', array('eq' => \Magento\CatalogInventory\Model\Stock\Status::STATUS_IN_STOCK));
         return $productCollection;
     }
 
