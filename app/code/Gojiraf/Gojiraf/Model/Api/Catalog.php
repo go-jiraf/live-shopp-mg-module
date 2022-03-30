@@ -111,7 +111,7 @@ class Catalog{
                 }
 
                 $imageUrl = $this->getProductImage($child);
-                $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", "");
+                $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
                 $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
                 if ($childOriginalPrice > $highestPrice) {
                     $highestPrice = $childOriginalPrice;
@@ -130,6 +130,14 @@ class Catalog{
 
             foreach ($variantsArray as $key => $variants)
             {
+                if(preg_match('/(talle|size)/i', $key) === 1) {
+                    $key = "Talle";
+                } 
+
+                if(preg_match('/(color)/i', $key) === 1) {
+                    $key = "Color";
+                } 
+
                 array_push($productArray["variants"], array(
                     "name" => $key,
                     "options" => $variants
