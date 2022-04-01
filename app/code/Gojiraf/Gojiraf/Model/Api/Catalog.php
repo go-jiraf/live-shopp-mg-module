@@ -98,7 +98,7 @@ class Catalog{
                     array_push($option, $attributeValue);
                     if (!isset($variantsArray[$attribute->getAttributeCode() ]))
                     {
-                        $variantsArray[$attribute->getAttributeCode() ] = array();
+                        $variantsArray[$attribute->getFrontendLabel() ] = array();
                         array_push($variantsArray[$attribute->getAttributeCode() ], $attributeValue);
                     }
                     else
@@ -130,14 +130,6 @@ class Catalog{
 
             foreach ($variantsArray as $key => $variants)
             {
-                if(preg_match('/(talle|size)/i', $key) === 1) {
-                    $key = "Talle";
-                } 
-
-                if(preg_match('/(color)/i', $key) === 1) {
-                    $key = "Color";
-                } 
-
                 array_push($productArray["variants"], array(
                     "name" => $key,
                     "options" => $variants
