@@ -98,7 +98,7 @@ class Catalog{
                     array_push($option, $attributeValue);
                     if (!isset($variantsArray[$attribute->getAttributeCode() ]))
                     {
-                        $variantsArray[$attribute->getAttributeCode() ] = array();
+                        $variantsArray[$attribute->getFrontendLabel() ] = array();
                         array_push($variantsArray[$attribute->getAttributeCode() ], $attributeValue);
                     }
                     else
@@ -111,7 +111,7 @@ class Catalog{
                 }
 
                 $imageUrl = $this->getProductImage($child);
-                $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", "");
+                $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
                 $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
                 if ($childOriginalPrice > $highestPrice) {
                     $highestPrice = $childOriginalPrice;
