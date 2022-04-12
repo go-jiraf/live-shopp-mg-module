@@ -99,7 +99,7 @@ class Catalog{
                     if (!isset($variantsArray[$attribute->getAttributeCode() ]))
                     {
                         $variantsArray[$attribute->getFrontendLabel() ] = array();
-                        array_push($variantsArray[$attribute->getAttributeCode() ], $attributeValue);
+                        array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
                     }
                     else
                     {
