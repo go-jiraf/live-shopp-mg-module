@@ -81,8 +81,6 @@ class Catalog{
                 "id" => $productModel->getId() ,
                 "sku" => $productModel->getSku() ,
                 "description" => $productModel->getName() ,
-                "variants" => array() ,
-                "variantOptions" => array() ,
                 "price" => "",
                 "originalPrice" => "",
                 "imageUrl" => ""
@@ -131,20 +129,19 @@ class Catalog{
                         ->getFrontend()
                         ->getValue($child);
                     array_push($option, $attributeValue);
-                    if (!isset($variantsArray[$attribute->getAttributeCode() ]))
+                    if (!isset($variantsArray[$attribute->getFrontendLabel() ]))
                     {
                         $variantsArray[$attribute->getFrontendLabel() ] = array();
                         array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
                     }
                     else
                     {
-                        if (!in_array($attributeValue, $variantsArray[$attribute->getAttributeCode() ]))
+                        if (!in_array($attributeValue, $variantsArray[$attribute->getFrontendLabel() ]))
                         {
-                            array_push($variantsArray[$attribute->getAttributeCode() ], $attributeValue);
+                            array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
                         }
                     }
                 }
-
                 $imageUrl = $this->getProductImage($child);
                 $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
                 $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
@@ -160,7 +157,6 @@ class Catalog{
                     "originalPrice" => $childOriginalPrice,
                     "description" => $child->getName()
                 ));
-
             }
 
             foreach ($variantsArray as $key => $variants)
@@ -176,7 +172,7 @@ class Catalog{
                 return array();
             }
             $productArray["variantOptions"] = $optionsArray;
-            $configProductPrice = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
+            $configProductPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
             $productArray["price"] =  ($configProductPrice == 0 ) ? $highestPrice : $configProductPrice ;
             $productArray["imageUrl"] = $this->getProductImage($productModel) ;
             return $productArray;
