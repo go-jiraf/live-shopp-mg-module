@@ -8,11 +8,19 @@ class Catalog{
 
     private $variantAttributes;
     private $imageHelper;
+
+    protected $productCollectionFactory;
+    protected $productVisibility;
+    protected $productStatus;
+
     // /rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
     public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = ""){
 
         $this->imageHelper = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Helper\Image');
         $this->stockRegistry = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\CatalogInventory\Api\StockRegistryInterface');
+        $this->productCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
+        $this->productStatus = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\Product\Attribute\Source\Status');
+        $this->productVisibility = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\Product\Visibility');
 
         $productCollection = $this->prepareCollection();
         $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
@@ -23,24 +31,27 @@ class Catalog{
         }
 
         $productList = array();
-        foreach ($filteredCollection as $productModel)
-        {
-            $productData = $this->buildProductData($productModel);
-            array_push($productList, $productData);
+        foreach ($filteredCollection as $productModel){
+            if ($productModel->getTypeId() == 'configurable') {
+                $productData = $this->buildConfigProductData($productModel);
+            }else{
+                $productData = $this->buildSimpleProductData($productModel);
+            }
+            if (!empty($productData)) {
+                array_push($productList, $productData);
+            }
         }
-
         return $productList;
     }
 
-
     public function prepareCollection(){
-        $productCollection = \Magento\Framework\App\ObjectManager::getInstance()->get('\Magento\Catalog\Model\ResourceModel\Product\Collection');
+        $productCollection = $this->productCollectionFactory->create();
         $productCollection->addAttributeToSelect('*');
-        $productCollection->addAttributeToFilter('type_id', 'configurable');
-        $productCollection->joinField(
-            'stock_status', 'cataloginventory_stock_status', 'stock_status', 'product_id=entity_id', '{{table}}.stock_id=1', 'left'
-        )->addFieldToFilter('stock_status', array('eq' => \Magento\CatalogInventory\Model\Stock\Status::STATUS_IN_STOCK));
+        $productCollection->addAttributeToFilter('status', ['in' => $this->productStatus->getVisibleStatusIds()]);
+        $productCollection->setVisibility($this->productVisibility->getVisibleInSiteIds());
+
         return $productCollection;
+
     }
 
 
@@ -61,7 +72,27 @@ class Catalog{
     }
 
 
-    public function buildProductData($productModel){
+    public function buildSimpleProductData($productModel){
+            $stockStatus = $this->stockRegistry->getStockItem($productModel->getId());              
+            if ($stockStatus->getData('is_in_stock') == 0 || $stockStatus->getQty() == 0) {
+                return array();
+            }
+            $productArray = array(
+                "id" => $productModel->getId() ,
+                "sku" => $productModel->getSku() ,
+                "description" => $productModel->getName() ,
+                "price" => "",
+                "originalPrice" => "",
+                "imageUrl" => ""
+            );
+
+            $productArray["price"] =   (float)number_format($productModel->getFinalPrice() , 2, ",", "");
+            $productArray["originalPrice"] =   (float)number_format($productModel->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
+            $productArray["imageUrl"] = $this->getProductImage($productModel) ;
+            return $productArray;
+
+    }
+    public function buildConfigProductData($productModel){
             $productArray = array(
                 "id" => $productModel->getId() ,
                 "sku" => $productModel->getSku() ,
@@ -71,6 +102,7 @@ class Catalog{
                 "price" => "",
                 "imageUrl" => ""
             );
+
 
             $this->variantAttributes = $productModel->getTypeInstance()
                 ->getUsedProductAttributes($productModel);
@@ -83,7 +115,8 @@ class Catalog{
             foreach ($childProducts as $child)
             {
                 //Si la variante no tiene stock, la ignoramos.
-                $stockStatus = $this->stockRegistry->getStockItem($child->getId());              
+                $stockStatus = $this->stockRegistry->getStockItem($child->getId());
+
                 if ($stockStatus->getData('is_in_stock') == 0 || $stockStatus->getQty() == 0) {
                     continue;
                 }
@@ -96,20 +129,19 @@ class Catalog{
                         ->getFrontend()
                         ->getValue($child);
                     array_push($option, $attributeValue);
-                    if (!isset($variantsArray[$attribute->getAttributeCode() ]))
+                    if (!isset($variantsArray[$attribute->getFrontendLabel() ]))
                     {
                         $variantsArray[$attribute->getFrontendLabel() ] = array();
                         array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
                     }
                     else
                     {
-                        if (!in_array($attributeValue, $variantsArray[$attribute->getAttributeCode() ]))
+                        if (!in_array($attributeValue, $variantsArray[$attribute->getFrontendLabel() ]))
                         {
-                            array_push($variantsArray[$attribute->getAttributeCode() ], $attributeValue);
+                            array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
                         }
                     }
                 }
-
                 $imageUrl = $this->getProductImage($child);
                 $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
                 $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
@@ -125,7 +157,6 @@ class Catalog{
                     "originalPrice" => $childOriginalPrice,
                     "description" => $child->getName()
                 ));
-
             }
 
             foreach ($variantsArray as $key => $variants)
@@ -137,8 +168,11 @@ class Catalog{
             }
 
             //aca las variantOptions
+            if (empty($optionsArray)) {
+                return array();
+            }
             $productArray["variantOptions"] = $optionsArray;
-            $configProductPrice = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
+            $configProductPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
             $productArray["price"] =  ($configProductPrice == 0 ) ? $highestPrice : $configProductPrice ;
             $productArray["imageUrl"] = $this->getProductImage($productModel) ;
             return $productArray;
