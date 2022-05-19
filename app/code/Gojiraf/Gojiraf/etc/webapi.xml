@@ -8,4 +8,12 @@
             <resource ref="self" />
         </resources>
     </route>
+
+    <route url="/V1/gojiraf/version" method="GET">
+        <service class="Gojiraf\Gojiraf\Api\VersionInterface" method="getVersion" />
+        <resources>
+            <resource ref="self" />
+        </resources>
+    </route>
+
 </routes>
