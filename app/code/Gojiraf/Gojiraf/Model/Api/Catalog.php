@@ -5,7 +5,6 @@ namespace Gojiraf\Gojiraf\Model\Api;
 
 
 class Catalog{
-
     private $variantAttributes;
     private $imageHelper;
 
@@ -13,6 +12,10 @@ class Catalog{
     protected $productVisibility;
     protected $productStatus;
 
+    public $catalogVersion = "V.1.4";
+    public function getCatalogVersion(){
+        return $this->catalogVersion;
+    }
     // /rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
     public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = ""){
 
