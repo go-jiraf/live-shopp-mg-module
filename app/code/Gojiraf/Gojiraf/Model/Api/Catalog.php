@@ -15,7 +15,7 @@ class Catalog
 
     protected $objectManager;
 
-    public $catalogVersion = "V.1.4";
+    public $catalogVersion = "V.1.5";
     public function getCatalogVersion(){
         return $this->catalogVersion;
     }
