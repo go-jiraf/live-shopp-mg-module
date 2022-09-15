@@ -86,7 +86,7 @@ class Catalog
 
     private function filterCollection($productCollection, $page, $limit, $searchTerm, $ids)
     {
-        $offset = ($page == 0 || $page == 1) ? 0 : $page * $limit - 1;
+        $offset = ($page == 0) ? 0 : $page * ($limit);
 
         // Si pide IDs de productos especificos, los filtramos.
         if (!empty($ids) && $ids != "undefined") {
