@@ -76,7 +76,23 @@ class Catalog
             $productCollection
             ->getSelect()
             ->join(
-                array('stock_item' => new Zend_Db_Expr("(SELECT sku, is_salable, (initial_qty + reservation_qty - min_qty) AS qty FROM ( SELECT base.sku AS sku, base.is_salable, base.quantity AS initial_qty, IFNULL(reservation.quantity,0) AS reservation_qty, entity.entity_id, catalog.min_qty as min_qty FROM inventory_stock_".$stockId." as base LEFT JOIN inventory_reservation as reservation ON base.sku = reservation.sku LEFT JOIN catalog_product_entity as entity ON entity.sku = base.sku LEFT JOIN cataloginventory_stock_item AS catalog ON catalog.item_id = entity.entity_id) AS salable_quantity HAVING is_salable = TRUE AND qty > 0)")),
+                    array('stock_item' => new Zend_Db_Expr("(
+                        SELECT
+                            sku
+                        FROM
+                            (SELECT 
+                                base.sku AS sku,
+                                    base.quantity AS initial_qty,
+                                    IFNULL(reservation.quantity, 0) AS reservation_qty
+                            FROM
+                                inventory_stock_".$stockId." AS base
+                            LEFT JOIN inventory_reservation AS reservation ON base.sku = reservation.sku
+                                AND reservation.stock_id = ".$stockId."
+                            LEFT JOIN catalog_product_entity AS entity ON entity.sku = base.sku) AS salable_quantity
+                        WHERE
+                            (initial_qty + reservation_qty) > 0
+                    )"
+                )),
                 'e.sku = stock_item.sku',
                 array('')
             );
