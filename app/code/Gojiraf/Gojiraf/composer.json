@@ -1,0 +1,23 @@
+{
+  "name": "Gojiraf_Gojiraf",
+  "description": "Integration with GoJiraf Live Shopping",
+  "require": {
+     "php": "~8.0|~8.1",
+     "magento/framework": "*",
+     "magento/module-integration": "*",
+     "magento/catalog": "*",
+     "magento/sales": "*",
+     "magento/quotes": "*",
+     "magento/customer": "*",
+     "magento/cms": "*"
+  },
+  "type": "magento2-module",
+  "version": "1.0",
+  "autoload": {
+     "files": [ "registration.php" ],
+     "psr-4": {
+        "Gojiraf\\Gojiraf\\": ""
+     }
+  }
+}
+
