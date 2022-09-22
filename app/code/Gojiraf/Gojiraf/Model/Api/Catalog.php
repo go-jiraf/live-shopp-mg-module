@@ -15,12 +15,12 @@ class Catalog
 
     protected $objectManager;
 
-    public $catalogVersion = "V.1.5";
+    private $catalogVersion = "V.2.0.0";
     public function getCatalogVersion(){
         return $this->catalogVersion;
     }
     // /rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
-    public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "")
+    public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true)
     {
 
         $this->objectManager = \Magento\Framework\App\ObjectManager::getInstance();
@@ -33,7 +33,7 @@ class Catalog
         
         $this->isDefaultStock = $this->isDefaultStock();
 
-        $productCollection = $this->prepareCollection();
+        $productCollection = $this->prepareCollection($filterByStock);
         $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
 
         if (empty($filteredCollection->getData())){
@@ -43,7 +43,7 @@ class Catalog
         $productList = array();
         foreach ($filteredCollection as $productModel) {
             if ($productModel->getTypeId() == 'configurable') {
-                $productData = $this->buildConfigProductData($productModel);
+                $productData = $this->buildConfigProductData($productModel, $filterByStock);
             } else { 
                 $productData = $this->buildSimpleProductData($productModel);
             }
@@ -54,32 +54,50 @@ class Catalog
         return $productList;
     }
 
-    private function prepareCollection()
+    private function prepareCollection($filterByStock)
     {
         $productCollection = $this->productCollectionFactory->create();
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('status', ['in' => $this->productStatus->getVisibleStatusIds()]);
         $productCollection->setVisibility($this->productVisibility->getVisibleInSiteIds());
-
-        if($this->isDefaultStock){
-            $productCollection->setFlag('has_stock_status_filter', false);
-            $productCollection->joinField(
-                'stock_item', 
-                'cataloginventory_stock_item', 
-                'is_in_stock', 
-                'product_id=entity_id', 
-                'is_in_stock=1'
-            );
-        } else {
-            $getStockIdForCurrentWebsite = $this->objectManager->get('Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite');
-            $stockId = $getStockIdForCurrentWebsite->execute();
-            $productCollection
-            ->getSelect()
-            ->join(
-                array('stock_item' => new Zend_Db_Expr("( SELECT sku, quantity, is_salable FROM inventory_stock_"."$stockId"." WHERE is_salable = true AND quantity > 0)")),
-                'e.sku = stock_item.sku',
-                array('')
-            );
+        
+        if($filterByStock){
+            if($this->isDefaultStock){
+                $productCollection->setFlag('has_stock_status_filter', false);
+                $productCollection->joinField(
+                    'stock_item', 
+                    'cataloginventory_stock_item', 
+                    'is_in_stock', 
+                    'product_id=entity_id', 
+                    'is_in_stock=1'
+                );
+            } else {
+                $getStockIdForCurrentWebsite = $this->objectManager->get('Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite');
+                $stockId = $getStockIdForCurrentWebsite->execute();
+                $productCollection
+                ->getSelect()
+                ->join(
+                    array('stock_item' => new Zend_Db_Expr("(
+                        SELECT
+                            sku
+                        FROM
+                            (SELECT 
+                                base.sku AS sku,
+                                    base.quantity AS initial_qty,
+                                    IFNULL(reservation.quantity, 0) AS reservation_qty
+                            FROM
+                                inventory_stock_".$stockId." AS base
+                            LEFT JOIN inventory_reservation AS reservation ON base.sku = reservation.sku
+                                AND reservation.stock_id = ".$stockId."
+                            LEFT JOIN catalog_product_entity AS entity ON entity.sku = base.sku) AS salable_quantity
+                        WHERE
+                            (initial_qty + reservation_qty) > 0
+                    )"
+                )),
+                    'e.sku = stock_item.sku',
+                    array('')
+                );
+            }
         }
         return $productCollection;
     }
@@ -120,16 +138,16 @@ class Catalog
         return $productArray;
     }
     
-    private function buildConfigProductData($productModel)
+    private function buildConfigProductData($productModel, $filterByStock)
     {
         $productArray = array(
             "id" => $productModel->getId() ,
-            "sku" => $productModel->getSku() ,
-            "description" => $productModel->getName() ,
-            "variants" => array() ,
-            "variantOptions" => array() ,
+            "sku" => $productModel->getSku(),
+            "description" => $productModel->getName(),
             "price" => "",
-            "imageUrl" => ""
+            "imageUrl" => "",
+            "variants" => array(),
+            "variantOptions" => array()
         );
         
         $this->variantAttributes = $productModel->getTypeInstance()
@@ -145,13 +163,15 @@ class Catalog
             //Si la variante no tiene stock, la ignoramos.
             $stockStatus = $this->stockRegistry->getStockItem($child->getId());
             
-            if($this->isDefaultStock){
-                if($stockStatus->getData('is_in_stock') == 0 || $stockStatus->getQty() == 0){
-                    continue;
-                }
-            } else {
-                if($this->getStock($child) == 0){
-                    continue;
+            if ($filterByStock) {
+                if($this->isDefaultStock){
+                    if($stockStatus->getData('is_in_stock') == 0 || $stockStatus->getQty() == 0){
+                        continue;
+                    }
+                } else {
+                    if($this->getStock($child) == 0){
+                        continue;
+                    }
                 }
             }
 
