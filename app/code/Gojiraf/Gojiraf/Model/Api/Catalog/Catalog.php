@@ -73,26 +73,33 @@ class Catalog
                 $productCollection
                 ->getSelect()
                 ->join(
-                    array('stock_item' => new Zend_Db_Expr("(
-                        SELECT
-                            sku
+                    array('stock' => new Zend_Db_Expr("(
+                        SELECT 
+                            sku,
+                            quantity AS initial_qty
                         FROM
-                            (SELECT 
-                                base.sku AS sku,
-                                    base.quantity AS initial_qty,
-                                    IFNULL(reservation.quantity, 0) AS reservation_qty
-                            FROM
-                                inventory_stock_".$stockId." AS base
-                            LEFT JOIN inventory_reservation AS reservation ON base.sku = reservation.sku
-                                AND reservation.stock_id = ".$stockId."
-                            LEFT JOIN catalog_product_entity AS entity ON entity.sku = base.sku) AS salable_quantity
-                        WHERE
-                            (initial_qty + reservation_qty) > 0
+                            inventory_stock_".$stockId."
                     )"
                 )),
-                    'e.sku = stock_item.sku',
-                    array('')
-                );
+                    'e.sku = stock.sku',
+                    array('stock.initial_qty')
+                )
+                ->joinLeft(
+                    array('reservation' => new Zend_Db_Expr("(
+                        SELECT
+                            sku,
+                            SUM(quantity) as reservation_qty
+                        FROM
+                            inventory_reservation
+                        WHERE
+                            stock_id = ".$stockId."
+                    )"
+                    )),
+                        'e.sku = reservation.sku',
+                        array('reservation.reservation_qty')
+                )
+                ->where('(initial_qty + IFNULL(reservation_qty,0)) > ?', 0)
+                ;
             }
         }
         return $productCollection;
