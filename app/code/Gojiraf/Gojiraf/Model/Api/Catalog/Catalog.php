@@ -15,7 +15,7 @@ class Catalog
     protected $productVisibility;
     protected $productStatus;
 
-    protected $catalogVersion = "V.2.0.0";
+    protected $catalogVersion = "V.2.0.1";
 
     public function getCatalogVersion(){
         return $this->catalogVersion;
