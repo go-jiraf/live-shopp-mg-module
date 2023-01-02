@@ -1,0 +1,15 @@
+{
+   "name": "gojiraf/live-shopp-mg-module",
+   "description": "Functionallity extension for integration with GoJiraf Live Shopping",
+   "license": "proprietary",
+   "require": {
+      "php": "~8.0|~8.1"
+   },
+   "type": "magento2-module",
+   "autoload": {
+      "files": [ "registration.php" ],
+      "psr-4": {
+         "Gojiraf\\Gojiraf\\": ""
+      }
+   }
+ }
