@@ -15,12 +15,6 @@ class Catalog
     protected $productVisibility;
     protected $productStatus;
 
-    protected $catalogVersion = "V.2.0.1";
-
-    public function getCatalogVersion(){
-        return $this->catalogVersion;
-    }
-
     // /rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
     public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true)
     {

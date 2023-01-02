@@ -4,12 +4,10 @@ namespace Gojiraf\Gojiraf\Model\Api;
 
 
 class Version{
-
+    private $moduleVersion = '1.1.3';
     // /rest/V1/gojiraf/version
     public function getVersion(){
-        $moduleResource = \Magento\Framework\App\ObjectManager::getInstance()->get('Gojiraf\Gojiraf\Model\Api\Catalog\Catalog');
-        $moduleVersion = $moduleResource->getCatalogVersion();
-        return $moduleVersion;
+        return $this->moduleVersion;
     }
 
 }
