@@ -8,13 +8,20 @@ class Store
   protected $scopeConfig;
   protected $storeManager;
   protected $websiteCollectionFactory;
+
+  public function __construct(
+    \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+    \Magento\Store\Model\StoreManagerInterface $storeManager,
+    \Magento\Store\Model\ResourceModel\Website\CollectionFactory $websiteCollectionFactory,
+  )
+  {
+    $this->scopeConfig = $scopeConfig;
+    $this->storeManager = $storeManager;
+    $this->websiteCollectionFactory = $websiteCollectionFactory;
+  }
   
   public function getStoreData()
   {
-    $this->objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-    $this->scopeConfig = $this->objectManager->create('\Magento\Framework\App\Config\ScopeConfigInterface');
-    $this->storeManager = $this->objectManager->get('\Magento\Store\Model\StoreManagerInterface');
-    $this->websiteCollectionFactory = $this->objectManager->get('Magento\Store\Model\ResourceModel\Website\CollectionFactory');
 
     $storeEmail = $this->scopeConfig->getValue(
       'trans_email/ident_sales/email',

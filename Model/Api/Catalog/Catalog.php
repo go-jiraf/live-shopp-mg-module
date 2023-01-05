@@ -3,34 +3,59 @@
 namespace Gojiraf\Gojiraf\Model\Api\Catalog;
 
 use Zend_Db_Expr;
-use Gojiraf\Gojiraf\Model\Api\Catalog\Product\SimpleProductBuilder;
-use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ConfigurableProductBuilder;
 
 class Catalog
 {
-    protected $isDefaultStock;
-
-    protected $objectManager;
+    private $isDefaultStock;
     protected $productCollectionFactory;
     protected $productVisibility;
     protected $productStatus;
+    protected $getStockIdForCurrentWebsite;
+    protected $productMetadata;
+    protected $getSources;
+    protected $objectManager;
+    protected $getProductSalableQty;
 
-    // /rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
+    public function __construct(
+        \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
+        \Magento\Catalog\Model\Product\Attribute\Source\Status $productStatus,
+        \Magento\Catalog\Model\Product\Visibility $productVisibility,
+        \Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite $getStockIdForCurrentWebsite,
+        \Magento\Framework\App\ProductMetadataInterface $productMetadata,
+        \Magento\Inventory\Model\Source\Command\GetSourcesAssignedToStockOrderedByPriority $getSources,
+        \Magento\Framework\ObjectManagerInterface $objectManager,
+        \Magento\InventorySales\Model\GetProductSalableQty $getProductSalableQty,
+    )
+    {
+        $this->productCollectionFactory = $productCollectionFactory;
+        $this->productStatus = $productStatus;
+        $this->productVisibility = $productVisibility;
+        $this->getStockIdForCurrentWebsite = $getStockIdForCurrentWebsite;
+        $this->productMetadata = $productMetadata;
+        $this->getSources = $getSources;
+        $this->objectManager = $objectManager;
+        $this->getProductSalableQty = $getProductSalableQty;
+    }
+
+    /**
+     * Returns an objects array with [simple or with variants] product details: sku, description, prices, stock, and images
+     * @param string $page
+     * @param string $limit
+     * @param string $searchTerm
+     * @param mixed[] $ids
+     * @param bool $filterByStock
+     * @return array
+     * rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
+     */
     public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true)
     {
-
-        $this->objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-
-        $this->productCollectionFactory = $this->objectManager->get('\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory');
-        $this->productStatus = $this->objectManager->get('\Magento\Catalog\Model\Product\Attribute\Source\Status');
-        $this->productVisibility = $this->objectManager->get('\Magento\Catalog\Model\Product\Visibility');
         
-        $this->isDefaultStock = $this->isDefaultStock();
+        $this->isDefaultStock = $this->getIsDefaultStock();
 
         $productCollection = $this->prepareCollection($filterByStock);
         $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
 
-        if (empty($filteredCollection->getData())){
+        if ($filteredCollection->count() === 0){
             return [];
         }
 
@@ -50,6 +75,28 @@ class Catalog
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('status', ['in' => $this->productStatus->getVisibleStatusIds()]);
         $productCollection->setVisibility($this->productVisibility->getVisibleInSiteIds());
+
+        foreach($productCollection as $productKey => $product){
+            $stockId = $this->getStockIdForCurrentWebsite->execute();
+            $salable_quantity = $this->getProductSalableQty->execute($product->getSku(), $stockId);
+            if($product->getTypeId() === 'simple' && $salable_quantity == 0){
+                $productCollection->removeItemByKey($productKey);
+            }
+        }
+
+        /*foreach($productCollection as $key => $prod){
+            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+            $stockRegistry = $objectManager->get('Magento\CatalogInventory\Api\StockRegistryInterface');
+            $stockItemRepository = $objectManager->get('\Magento\CatalogInventory\Model\Stock\StockItemRepository');
+            $stockId = $this->getStockIdForCurrentWebsite->execute();
+            echo $this->getProductSalableQty->execute($prod->getSku(), $stockId).PHP_EOL;
+            //if()
+            //$productCollection->removeItemByKey($key);
+            
+            //echo json_encode($stockRegistry->getStockItem($prod->getId())->getData());
+            //echo json_encode($prod->getData()); 
+            //echo $stockItemRepository->get($prod->getId())->getData();
+        }*/
         
         if($filterByStock){
             if($this->isDefaultStock){
@@ -62,8 +109,7 @@ class Catalog
                     'is_in_stock=1'
                 );
             } else {
-                $getStockIdForCurrentWebsite = $this->objectManager->get('Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite');
-                $stockId = $getStockIdForCurrentWebsite->execute();
+                $stockId = $this->getStockIdForCurrentWebsite->execute();
                 $productCollection
                 ->getSelect()
                 ->join(
@@ -95,6 +141,8 @@ class Catalog
                 ->where('(initial_qty + IFNULL(reservation_qty,0)) > ?', 0)
                 ;
             }
+        } else {
+            $productCollection->addAttributeToFilter('is_saleable', 1)->load();
         }
         return $productCollection;
     }
@@ -118,18 +166,15 @@ class Catalog
     }
 
     
-    protected function isDefaultStock()
+    protected function getIsDefaultStock()
     {
-        $productMetadata = $this->objectManager->get('\Magento\Framework\App\ProductMetadataInterface');
-        $magentoVersion = $productMetadata->getVersion();
+        $magentoVersion = $this->productMetadata->getVersion();
         if(version_compare($magentoVersion, "2.3", '<')){
             return true;
         }
         
-        $getStockIdForCurrentWebsite = $this->objectManager->get('Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite');
-        $stockId = $getStockIdForCurrentWebsite->execute();
-        $getSources = $this->objectManager->get('Magento\Inventory\Model\Source\Command\GetSourcesAssignedToStockOrderedByPriority');
-        $sources = $getSources->execute($stockId);
+        $stockId = $this->getStockIdForCurrentWebsite->execute();
+        $sources = $this->getSources->execute($stockId);
 
         // If there are more than 1 source on active stock, is multisource
         if(count($sources) > 1){
@@ -144,16 +189,8 @@ class Catalog
     }
 
     protected function getProductBuilder($productType){
-        switch($productType){
-            case 'simple':
-               return new SimpleProductBuilder($this->isDefaultStock());
-                break;
-            case 'configurable':
-                return new ConfigurableProductBuilder($this->isDefaultStock());
-                break;
-            default:
-                break;
-        }
+        $productBuilderFactory = $this->objectManager->create('\Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductBuilderFactory');
+        return $productBuilderFactory->create($productType, $this->isDefaultStock);
     }
     
 }

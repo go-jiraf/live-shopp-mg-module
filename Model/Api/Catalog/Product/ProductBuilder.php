@@ -4,18 +4,26 @@ namespace Gojiraf\Gojiraf\Model\Api\Catalog\Product;
 
 abstract class ProductBuilder
 {
-  protected $objectManager;
-  protected $imageHelper;
-  protected $variantAttributes;
   protected $isDefaultStock;
+  protected $imageHelper;
+  private $getStockIdForCurrentWebsite;
+  protected $variantAttributes;
   protected $stockRegistry;
+  private $getProductSalableQty;
   
-  public function __construct ($isDefaultStock)
+  public function __construct (
+    $isDefaultStock, 
+    \Magento\Catalog\Helper\Image $imageHelper,
+    \Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite $getStockIdForCurrentWebsite,
+    \Magento\InventorySales\Model\GetProductSalableQty $getProductSalableQty,
+    \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
+  )
   {
-    $this->objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-    $this->imageHelper = $this->objectManager->get('\Magento\Catalog\Helper\Image');
-    $this->stockRegistry = $this->objectManager->get('\Magento\CatalogInventory\Api\StockRegistryInterface');
     $this->isDefaultStock = $isDefaultStock;
+    $this->imageHelper = $imageHelper;
+    $this->getStockIdForCurrentWebsite = $getStockIdForCurrentWebsite;
+    $this->getProductSalableQty = $getProductSalableQty;
+    $this->stockRegistry = $stockRegistry;
   }
 
   protected function getProductImage($product)
@@ -32,10 +40,8 @@ abstract class ProductBuilder
     if($this->isDefaultStock){
         return $this->stockRegistry->getStockItem($productModel->getId())->getQty();
     } else {
-        $getStockIdForCurrentWebsite = $this->objectManager->get('Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite');
-        $getProductSalableQty = $this->objectManager->get('Magento\InventorySales\Model\GetProductSalableQty');
-        $stockId = $getStockIdForCurrentWebsite->execute();
-        $salableQuantity = $getProductSalableQty->execute($productModel->getSku(), $stockId);
+        $stockId = $this->getStockIdForCurrentWebsite->execute();
+        $salableQuantity = $this->getProductSalableQty->execute($productModel->getSku(), $stockId);
         return $salableQuantity;
     }
   }
