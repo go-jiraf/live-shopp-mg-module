@@ -30,7 +30,7 @@ class Catalog
         $productCollection = $this->prepareCollection($filterByStock);
         $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
 
-        if (empty($filteredCollection->getData())){
+        if ($filteredCollection->count() === 0){
             return [];
         }
 
