@@ -2,10 +2,10 @@
 
 namespace Gojiraf\Gojiraf\Model\Api\Catalog\Product;
 
-use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductBuilder;
-use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductBuilderInterface;
+use Gojiraf\Gojiraf\Model\Api\Catalog\Product\Product;
+use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductInterface;
 
-class ConfigurableProductBuilder extends ProductBuilder implements ProductBuilderInterface{
+class ConfigurableProductBuilder extends Product implements ProductInterface{
 
   public function getProductData($productModel)
   {
@@ -65,7 +65,7 @@ class ConfigurableProductBuilder extends ProductBuilder implements ProductBuilde
                 }
             }
         }
-        $imageUrl = $this->getProductImage($child);
+        $imageUrl = $this->getImage($child);
         $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
         $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
         if ($childOriginalPrice > $highestPrice) {
@@ -98,7 +98,7 @@ class ConfigurableProductBuilder extends ProductBuilder implements ProductBuilde
     $productArray["variantOptions"] = $optionsArray;
     $configProductPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
     $productArray["price"] =  ($configProductPrice == 0 ) ? $highestPrice : $configProductPrice ;
-    $productArray["imageUrl"] = $this->getProductImage($productModel);
+    $productArray["imageUrl"] = $this->getImage($productModel);
 
     return $productArray;
   }

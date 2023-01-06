@@ -2,7 +2,7 @@
 
 namespace Gojiraf\Gojiraf\Model\Api\Catalog\Product;
 
-interface ProductBuilderInterface
+interface ProductInterface
 {
   public function getProductData($productModel);
 }
