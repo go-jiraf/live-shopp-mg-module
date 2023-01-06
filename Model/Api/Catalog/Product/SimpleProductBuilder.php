@@ -2,10 +2,10 @@
 
 namespace Gojiraf\Gojiraf\Model\Api\Catalog\Product;
 
-use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductBuilder;
-use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductBuilderInterface;
+use Gojiraf\Gojiraf\Model\Api\Catalog\Product\Product;
+use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductInterface;
 
-class SimpleProductBuilder extends ProductBuilder implements ProductBuilderInterface{
+class SimpleProductBuilder extends Product implements ProductInterface{
 
   public function getProductData($productModel)
   {
@@ -21,7 +21,7 @@ class SimpleProductBuilder extends ProductBuilder implements ProductBuilderInter
 
       $productArray["price"] = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
       $productArray["originalPrice"] = (float)number_format($productModel->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
-      $productArray["imageUrl"] = $this->getProductImage($productModel);
+      $productArray["imageUrl"] = $this->getImage($productModel);
 
       return $productArray;
   }
