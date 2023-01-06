@@ -5,21 +5,21 @@
     <route url="/V1/gojiraf/productlist/page/:page" method="GET">
         <service class="Gojiraf\Gojiraf\Api\CatalogInterface" method="getProductList" />
         <resources>
-            <resource ref="self" />
+            <resource ref="Gojiraf_Gojiraf::products" />
         </resources>
     </route>
 
     <route url="/V1/gojiraf/version" method="GET">
         <service class="Gojiraf\Gojiraf\Api\VersionInterface" method="getVersion" />
         <resources>
-            <resource ref="self" />
+            <resource ref="Gojiraf_Gojiraf::version" />
         </resources>
     </route>
 
     <route url="/V1/gojiraf/store" method="GET">
         <service class="Gojiraf\Gojiraf\Api\StoreInterface" method="getStoreData" />
         <resources>
-            <resource ref="self" />
+            <resource ref="Gojiraf_Gojiraf::store" />
         </resources>
     </route>
 
