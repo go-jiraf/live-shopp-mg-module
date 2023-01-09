@@ -30,11 +30,18 @@ abstract class Product
 
   protected function getImage($product)
   {
-    $imageUrl = $this
-      ->imageHelper
-      ->init($product, 'product_page_image')->setImageFile($product->getImage()) // image,small_image,thumbnail
-      ->getUrl();
-    return $imageUrl;
+    $image = $product->getImage();
+
+    if ($image && $image != 'no_selection') {
+      $imageUrl = $this
+        ->imageHelper
+        ->init($product, 'product_page_image')
+        ->setImageFile($image) // image,small_image,thumbnail
+        ->getUrl();
+      return $imageUrl;
+    } else {
+      return null;
+    }
   }
 
   protected function getStock($productModel)

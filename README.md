@@ -14,13 +14,13 @@ It includes functions that automatically process guests-carts (previously genera
 
 ## How to install
 
-- Require the project througt composer:
+- Require the project through composer:
 
 ``` bash
 composer require gojiraf/live-shopp-mg-module
 ```
 
-- Install the module on to Magento:
+- Install the module in Magento:
 
 ``` bash
 php bin/magento setup:upgrade
@@ -56,7 +56,7 @@ It implies to generate an access token and give it to our support area, who will
 
 #### Automatic integration
 
-Our integration service can automatically create your Live Shopping account and request the access token to Magento. However, it is not the most recommended option right now, due to some unexpected behaviors, and because is suitable only to one-site systems.
+Our integration service can automatically create your Live Shopping account and request the access token to Magento. However, it is not the most recommended option right now, due to some unexpected behaviors, and because it is suitable only to one-site systems.
 If you still want to try it, the steps are very simple. After install the Gojiraf's module, you will find a "ready-to-go" integration in your panel.
 
 **Steps:**
