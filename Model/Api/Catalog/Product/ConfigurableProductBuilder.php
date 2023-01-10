@@ -23,11 +23,13 @@ class ConfigurableProductBuilder extends Product implements ProductInterface{
       ->getTypeInstance()
       ->getUsedProductAttributes($productModel);
 
+    $productArray["imageUrl"] = $this->getImage($productModel);
+    
     $highestPrice = 0;
     $variantsArray = array();
     $optionsArray = array();
     $childProducts = $productModel->getTypeInstance()
-        ->getUsedProducts($productModel);
+    ->getUsedProducts($productModel);
     foreach ($childProducts as $child)
     {
         //Si la variante no tiene stock, la ignoramos.
@@ -65,7 +67,7 @@ class ConfigurableProductBuilder extends Product implements ProductInterface{
                 }
             }
         }
-        $imageUrl = $this->getImage($child);
+        $imageUrl = $this->getImage($child)?? $productArray['imageUrl'];
         $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
         $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
         if ($childOriginalPrice > $highestPrice) {
@@ -98,7 +100,6 @@ class ConfigurableProductBuilder extends Product implements ProductInterface{
     $productArray["variantOptions"] = $optionsArray;
     $configProductPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
     $productArray["price"] =  ($configProductPrice == 0 ) ? $highestPrice : $configProductPrice ;
-    $productArray["imageUrl"] = $this->getImage($productModel);
 
     return $productArray;
   }
