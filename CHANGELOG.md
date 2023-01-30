@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Refactor
 
 - Replace SQL query (low level code) for a Magento method in products stock filtering by stock
+## [1.1.6-beta] 2023-01-30
+
+### Refactor
+
+- Now on multisource stores the products are filtered using Magento native class
+
 ## [1.1.5] 2023-01-9
 
 ### Fixed
