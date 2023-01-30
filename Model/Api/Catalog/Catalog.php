@@ -16,6 +16,7 @@ class Catalog
     protected $getSources;
     protected $productFactory;
     protected $customLogger;
+    protected $stockStatus;
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
@@ -24,6 +25,7 @@ class Catalog
         \Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite $getStockIdForCurrentWebsite,
         \Magento\Framework\App\ProductMetadataInterface $productMetadata,
         \Magento\Inventory\Model\Source\Command\GetSourcesAssignedToStockOrderedByPriority $getSources,
+        \Magento\CatalogInventory\Model\ResourceModel\Stock\Status $stockStatus,
         \Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductFactory $productFactory,
         \Gojiraf\Gojiraf\Helper\Logger $customLogger,
     )
@@ -37,6 +39,7 @@ class Catalog
         $this->productFactory = $productFactory;
         $this->customLogger = $customLogger;
 
+        $this->stockStatus = $stockStatus;
     }
 
     /**
@@ -99,39 +102,7 @@ class Catalog
                 $this->customLogger->addLog("Default Query: " . $productCollection->getSelect()->__toString());
 
             } else {
-                $stockId = $this->getStockIdForCurrentWebsite->execute();
-                $productCollection
-                ->getSelect()
-                ->join(
-                    array('stock' => new Zend_Db_Expr("(
-                        SELECT 
-                            sku,
-                            quantity AS initial_qty
-                        FROM
-                            inventory_stock_".$stockId."
-                    )"
-                )),
-                    'e.sku = stock.sku',
-                    array('stock.initial_qty')
-                )
-                ->joinLeft(
-                    array('reservation' => new Zend_Db_Expr("(
-                        SELECT
-                            sku,
-                            SUM(quantity) as reservation_qty
-                        FROM
-                            inventory_reservation
-                        WHERE
-                            stock_id = ".$stockId."
-                    )"
-                    )),
-                        'e.sku = reservation.sku',
-                        array('reservation.reservation_qty')
-                )
-                ->where('(initial_qty + IFNULL(reservation_qty,0)) > ?', 0)
-                ;
-                $this->customLogger->addLog("Source Query: " . $productCollection->getSelect()->__toString());
-
+                $this->stockStatus->addIsInStockFilterToCollection($productCollection);
             }
         } else {
             $productCollection->addAttributeToFilter('is_saleable', 1)->load();
