@@ -54,6 +54,14 @@ It implies to generate an access token and give it to our support area, who will
 6. On the integrations list, on the just created one, click on "Activate", and then "Allow"
 7. Copy the content of the "Access token" field, and send it to our support staff to continue with the integration
 
+The bearer access tokens must be enabled con the system in order to admit it on REST queries. If they are not, you can do it with the CLI:
+
+```bash
+bin/magento config:set oauth/consumer/enable_integration_as_bearer 1
+```
+
+There is also a config on the admin panel: Stores > Configuration > Services > OAuth > Consumer settings, there you must to "Yes" the option "Allow OAuth Access Tokens to be used as standalone Bearer tokens".
+
 #### Automatic integration
 
 Our integration service can automatically create your Live Shopping account and request the access token to Magento. However, it is not the most recommended option right now, due to some unexpected behaviors, and because it is suitable only to one-site systems.
