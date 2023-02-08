@@ -169,7 +169,7 @@ class Catalog
         $stockId = $this->getStockIdForCurrentWebsite->execute();
         $this->customLogger->addLog("Stock ID: " .  $stockId );
         $sources = $this->getSources->execute($stockId);
-        $this->customLogger->addLog("Sources: " .  $sources );
+        $this->customLogger->addLog("Sources: " .  json_encode($sources) );
 
         // If there are more than 1 source on active stock, is multisource
         if(count($sources) > 1){
