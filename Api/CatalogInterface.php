@@ -11,8 +11,9 @@ interface CatalogInterface
      * @param string $searchTerm
      * @param mixed[] $ids
      * @param bool $filterByStock
+     * @param bool $debug
      * @return string
      */
  
-    public function getProductList($page, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true);
+    public function getProductList($page, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true,  $debug = false);
 }
