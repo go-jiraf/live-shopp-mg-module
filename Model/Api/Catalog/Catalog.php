@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Gojiraf\Gojiraf\Model\Api\Catalog;
 
@@ -15,6 +15,7 @@ class Catalog
     protected $productMetadata;
     protected $getSources;
     protected $productFactory;
+    protected $customLogger;
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
@@ -24,6 +25,7 @@ class Catalog
         \Magento\Framework\App\ProductMetadataInterface $productMetadata,
         \Magento\Inventory\Model\Source\Command\GetSourcesAssignedToStockOrderedByPriority $getSources,
         \Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductFactory $productFactory,
+        \Gojiraf\Gojiraf\Helper\Logger $customLogger,
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
@@ -33,6 +35,8 @@ class Catalog
         $this->productMetadata = $productMetadata;
         $this->getSources = $getSources;
         $this->productFactory = $productFactory;
+        $this->customLogger = $customLogger;
+
     }
 
     /**
@@ -42,27 +46,36 @@ class Catalog
      * @param string $searchTerm
      * @param mixed[] $ids
      * @param bool $filterByStock
+     * @param bool $debug
      * @return array
      * rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
      */
-    public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true)
+    public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true, $debug = false)
     {
-        
-        $this->isDefaultStock = $this->getIsDefaultStock();
 
-        $productCollection = $this->prepareCollection($filterByStock);
-        $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
-
-        if ($filteredCollection->count() === 0){
-            return [];
+        try {
+            $this->isDefaultStock = $this->getIsDefaultStock();
+            $this->customLogger->addLog("Is Default Stock: " . $this->isDefaultStock );
+            $productCollection = $this->prepareCollection($filterByStock);
+            $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
+            if ($filteredCollection->count() === 0){
+                $this->customLogger->addLog("No products found " . $filteredCollection->getSelect()->__toString());
+            }
+            $productList = array();
+            foreach ($filteredCollection as $productModel) {
+                $productType = $productModel->getTypeId();
+                $product = $this->productFactory->create($productType, $this->isDefaultStock);
+                $productData = $product->getProductData($productModel);
+                array_push($productList, $productData);
+            }
+        } catch (\Exception $e) {
+            $this->customLogger->addLog("Exception: " . $e->getMessage() );
         }
 
-        $productList = array();
-        foreach ($filteredCollection as $productModel) {
-            $productType = $productModel->getTypeId();
-            $product = $this->productFactory->create($productType, $this->isDefaultStock);
-            $productData = $product->getProductData($productModel);
-            array_push($productList, $productData);
+
+        if ($debug) {
+            return $this->customLogger->getLogs();
+
         }
         return $productList;
     }
@@ -73,7 +86,6 @@ class Catalog
         $productCollection->addAttributeToSelect('*');
         $productCollection->addAttributeToFilter('status', ['in' => $this->productStatus->getVisibleStatusIds()]);
         $productCollection->setVisibility($this->productVisibility->getVisibleInSiteIds());
-        
         if($filterByStock){
             if($this->isDefaultStock){
                 $productCollection->setFlag('has_stock_status_filter', false);
@@ -84,6 +96,8 @@ class Catalog
                     'product_id=entity_id', 
                     'is_in_stock=1'
                 );
+                $this->customLogger->addLog("Default Query: " . $productCollection->getSelect()->__toString());
+
             } else {
                 $stockId = $this->getStockIdForCurrentWebsite->execute();
                 $productCollection
@@ -116,6 +130,8 @@ class Catalog
                 )
                 ->where('(initial_qty + IFNULL(reservation_qty,0)) > ?', 0)
                 ;
+                $this->customLogger->addLog("Source Query: " . $productCollection->getSelect()->__toString());
+
             }
         } else {
             $productCollection->addAttributeToFilter('is_saleable', 1)->load();
@@ -145,12 +161,15 @@ class Catalog
     protected function getIsDefaultStock()
     {
         $magentoVersion = $this->productMetadata->getVersion();
+        $this->customLogger->addLog("Magento Version " . $magentoVersion);
         if(version_compare($magentoVersion, "2.3", '<')){
             return true;
         }
         
         $stockId = $this->getStockIdForCurrentWebsite->execute();
+        $this->customLogger->addLog("Stock ID: " .  $stockId );
         $sources = $this->getSources->execute($stockId);
+        $this->customLogger->addLog("Sources: " .  $sources );
 
         // If there are more than 1 source on active stock, is multisource
         if(count($sources) > 1){
