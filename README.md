@@ -32,6 +32,10 @@ php bin/magento setup:upgrade
 php bin/magento setup:di:compile
 ```
 
+## Compatibility
+
+This module has been tested on Magento 2.3 and superior versions.
+
 ## How to use
 
 ### Integration
