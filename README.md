@@ -12,6 +12,10 @@ It constructs and API that provides products data, and very basic information ab
 
 It includes functions that automatically process guests-carts (previously generated from Live Shopping) and redirects the user to the store checkout view.
 
+### Payment status update
+
+It implements a observer that is listening to order payments. When a order is paid, it sends the order data to Gojiraf, so, if the order was generated in a Live Shopping event, the Gojiraf order will be updated, so the seller can access to improved bussiness analytics.
+
 ## How to install
 
 - Require the project through composer:

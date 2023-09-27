@@ -3,4 +3,5 @@
     <preference for="Gojiraf\Gojiraf\Api\CatalogInterface" type="Gojiraf\Gojiraf\Model\Api\Catalog\Catalog"/>
     <preference for="Gojiraf\Gojiraf\Api\VersionInterface" type="Gojiraf\Gojiraf\Model\Api\Version"/>
     <preference for="Gojiraf\Gojiraf\Api\StoreInterface" type="Gojiraf\Gojiraf\Model\Api\Store"/>
+    <preference for="Gojiraf\Gojiraf\Api\WebhookInterface" type="Gojiraf\Gojiraf\Model\Api\Webhook"/>
 </config>

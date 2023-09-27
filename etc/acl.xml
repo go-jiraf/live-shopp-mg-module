@@ -8,6 +8,7 @@
                 <resource id="Gojiraf_Gojiraf::products" title="Products" />
                 <resource id="Gojiraf_Gojiraf::store" title="Store info" />
                 <resource id="Gojiraf_Gojiraf::version" title="Module version" />
+                <resource id="Gojiraf_Gojiraf::webhooks" title="Webhooks configuration" />
               </resource>
             </resource>
         </resources>

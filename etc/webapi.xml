@@ -23,4 +23,24 @@
         </resources>
     </route>
 
+    <route url="/V1/gojiraf/webhooks" method="GET">
+        <service class="Gojiraf\Gojiraf\Api\WebhookInterface" method="get" />
+        <resources>
+            <resource ref="Gojiraf_Gojiraf::webhooks" />
+        </resources>
+    </route>
+
+    <route url="/V1/gojiraf/webhooks/" method="POST">
+        <service class="Gojiraf\Gojiraf\Api\WebhookInterface" method="create" />
+        <resources>
+            <resource ref="Gojiraf_Gojiraf::webhooks" />
+        </resources>
+    </route>
+
+    <route url="/V1/gojiraf/webhooks/:id" method="DELETE">
+        <service class="Gojiraf\Gojiraf\Api\WebhookInterface" method="delete" />
+        <resources>
+            <resource ref="Gojiraf_Gojiraf::webhooks" />
+        </resources>
+    </route>
 </routes>
