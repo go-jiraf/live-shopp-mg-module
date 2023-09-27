@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.3] 2023-09-27
+
+### Fix
+
+- Downgrade the PHP Version requirement (7.3 or higher, instead of 8.0/8.1)
+
 ## [1.2.0] 2023-03-23
 
 ### Feature

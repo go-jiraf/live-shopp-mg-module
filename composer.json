@@ -3,7 +3,7 @@
    "description": "Functionallity extension for integration with GoJiraf Live Shopping",
    "license": "proprietary",
    "require": {
-      "php": "~8.0|~8.1"
+      "php": ">=7.3"
    },
    "type": "magento2-module",
    "autoload": {
