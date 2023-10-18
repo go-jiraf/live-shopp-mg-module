@@ -27,7 +27,7 @@ class Catalog
         \Magento\Inventory\Model\Source\Command\GetSourcesAssignedToStockOrderedByPriority $getSources,
         \Magento\CatalogInventory\Model\ResourceModel\Stock\Status $stockStatus,
         \Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductFactory $productFactory,
-        \Gojiraf\Gojiraf\Helper\Logger $customLogger,
+        \Gojiraf\Gojiraf\Helper\Logger $customLogger
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
