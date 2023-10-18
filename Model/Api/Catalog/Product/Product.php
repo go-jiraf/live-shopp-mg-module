@@ -16,7 +16,7 @@ abstract class Product
     \Magento\Catalog\Helper\Image $imageHelper,
     \Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite $getStockIdForCurrentWebsite,
     \Magento\InventorySales\Model\GetProductSalableQty $getProductSalableQty,
-    \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
+    \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry
   )
   {
     $this->isDefaultStock = $isDefaultStock;

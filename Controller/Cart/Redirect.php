@@ -31,7 +31,7 @@ class Redirect extends \Magento\Framework\App\Action\Action
         ManagerInterface $messageInterface,
         Configurable $configurable,
         JsonFactory $jsonFactory,
-        MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId,
+        MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId
     )
     {
         parent::__construct($context);

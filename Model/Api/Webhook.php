@@ -15,7 +15,7 @@ class Webhook
   public function __construct (
     WebhookCollection $webhookCollection,
     WebhookResource $webhookResource,
-    WebhookConfig $webhook,
+    WebhookConfig $webhook
   )
   {
     $this->webhookCollection = $webhookCollection;

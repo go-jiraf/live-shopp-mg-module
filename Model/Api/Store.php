@@ -12,7 +12,7 @@ class Store
   public function __construct(
     \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
     \Magento\Store\Model\StoreManagerInterface $storeManager,
-    \Magento\Store\Model\ResourceModel\Website\CollectionFactory $websiteCollectionFactory,
+    \Magento\Store\Model\ResourceModel\Website\CollectionFactory $websiteCollectionFactory
   )
   {
     $this->scopeConfig = $scopeConfig;
