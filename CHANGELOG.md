@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.1] 2023-11-10
+
+### Fix
+
+This version fixes an unsatisfactory behavior in the redirection to the cart.
+Now, it requires the configurable products to be previously added to the guest cart, not by its variant sku, but with the parent sku and an options configurations as specified in https://developer.adobe.com/commerce/webapi/rest/tutorials/orders/order-add-items/#add-a-configurable-product-to-a-cart
+The Gojiraf's module's is products-type-agnostic.
+
 ## [1.3.0] 2023-09-29
 
 ### Feature
