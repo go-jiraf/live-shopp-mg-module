@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.0] 2024-03-12
+
+### Feature
+
+- Add a response header to the /productlist endpoint ('X-Total-Count') with the count of filtered and built products
+
 ## [1.2.4] 2023-10-18
 
 ### Fix

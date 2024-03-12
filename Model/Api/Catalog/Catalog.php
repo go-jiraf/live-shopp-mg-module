@@ -3,6 +3,7 @@
 namespace Gojiraf\Gojiraf\Model\Api\Catalog;
 
 use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductFactory;
+use Magento\Framework\Controller\ResultInterface;
 use Zend_Db_Expr;
 
 class Catalog
@@ -17,6 +18,7 @@ class Catalog
     protected $productFactory;
     protected $customLogger;
     protected $stockStatus;
+    protected $response;
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
@@ -27,7 +29,8 @@ class Catalog
         \Magento\Inventory\Model\Source\Command\GetSourcesAssignedToStockOrderedByPriority $getSources,
         \Magento\CatalogInventory\Model\ResourceModel\Stock\Status $stockStatus,
         \Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductFactory $productFactory,
-        \Gojiraf\Gojiraf\Helper\Logger $customLogger
+        \Gojiraf\Gojiraf\Helper\Logger $customLogger,
+        \Magento\Framework\Webapi\Rest\Response $response
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
@@ -38,6 +41,7 @@ class Catalog
         $this->getSources = $getSources;
         $this->productFactory = $productFactory;
         $this->customLogger = $customLogger;
+        $this->response = $response;
 
         $this->stockStatus = $stockStatus;
     }
@@ -50,7 +54,7 @@ class Catalog
      * @param mixed[] $ids
      * @param bool $filterByStock
      * @param bool $debug
-     * @return array
+     * @return ResultInterface
      * rest/V1/gojiraf/productlist/page/1?searchTerm=Camisa&limit=10&ids=23,31
      */
     public function getProductList($page = 1, $limit = 10, $searchTerm = NULL, $ids = "", $filterByStock = true, $debug = false)
@@ -60,7 +64,7 @@ class Catalog
             $this->isDefaultStock = $this->getIsDefaultStock();
             $this->customLogger->addLog("Is Default Stock: " . $this->isDefaultStock );
             $productCollection = $this->prepareCollection($filterByStock);
-            $filteredCollection = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
+            [$filteredCollection, $filteredCollectionCount] = $this->filterCollection($productCollection, $page, $limit, $searchTerm, $ids);
             if ($filteredCollection->count() === 0){
                 $this->customLogger->addLog("No products found " . $filteredCollection->getSelect()->__toString());
             }
@@ -75,11 +79,12 @@ class Catalog
             $this->customLogger->addLog("Exception: " . $e->getMessage() );
         }
 
-
         if ($debug) {
             return $this->customLogger->getLogs();
-
         }
+
+        $this->response->setHeader('X-Total-Count', strval($filteredCollectionCount), true);
+
         return $productList;
     }
 
@@ -122,10 +127,12 @@ class Catalog
             $productCollection->addAttributeToFilter('name', array('like' => "%" .$searchTerm. "%"));
         }
 
+        $productCollectionCount = $productCollection->getSize();
+
         $productCollection->getSelect()
             ->limit($limit, $offset);
 
-        return $productCollection;
+        return [$productCollection, $productCollectionCount];
     }
 
     
@@ -153,5 +160,4 @@ class Catalog
 
         return true;
     }
-    
 }
