@@ -5,103 +5,103 @@ namespace Gojiraf\Gojiraf\Model\Api\Catalog\Product;
 use Gojiraf\Gojiraf\Model\Api\Catalog\Product\Product;
 use Gojiraf\Gojiraf\Model\Api\Catalog\Product\ProductInterface;
 
-class ConfigurableProductBuilder extends Product implements ProductInterface{
+class ConfigurableProductBuilder extends Product implements ProductInterface
+{
 
   public function getProductData($productModel)
   {
-    $productArray = array(
-      "id" => $productModel->getId(),
-      "sku" => $productModel->getSku(),
-      "description" => $productModel->getName(),
-      "price" => "",
-      "imageUrl" => "",
-      "variants" => array(),
-      "variantOptions" => array()
-    );
-
     $this->variantAttributes = $productModel
       ->getTypeInstance()
       ->getUsedProductAttributes($productModel);
 
-    $productArray["imageUrl"] = $this->getImage($productModel);
-    
-    $highestPrice = 0;
-    $variantsArray = array();
-    $optionsArray = array();
-    $childProducts = $productModel->getTypeInstance()
-    ->getUsedProducts($productModel);
-    foreach ($childProducts as $child)
-    {
-        //Si la variante no tiene stock, la ignoramos.
-        $stockStatus = $this->stockRegistry->getStockItem($child->getId());
-        
-        if($this->isDefaultStock){
-            if($stockStatus->getData('is_in_stock') == 0 || $stockStatus->getQty() == 0){
-                continue;
-            }
-        } else {
-            if($this->getStock($child) == 0){
-                continue;
-            }
-        }
+    $imageUrl = $this->getImage($productModel);
 
-        //Acomodamos datos de las posibles variantes
-        $option = array();
-        foreach ($this->variantAttributes as $attribute)
-        {
-            $attributeValue = $child->getResource()
-            ->getAttribute($attribute->getAttributeCode())
-            ->getFrontend()
-            ->getValue($child);
-            array_push($option, $attributeValue);
-            if (!isset($variantsArray[$attribute->getFrontendLabel() ]))
-            {
-                $variantsArray[$attribute->getFrontendLabel() ] = array();
-                array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
-            }
-            else
-            {
-                if (!in_array($attributeValue, $variantsArray[$attribute->getFrontendLabel() ]))
-                {
-                    array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
-                }
-            }
-        }
-        $imageUrl = $this->getImage($child)?? $productArray['imageUrl'];
-        $childPrice = (float)number_format($child->getFinalPrice() , 2, ",", ""); 
-        $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
-        if ($childOriginalPrice > $highestPrice) {
-            $highestPrice = $childOriginalPrice;
-        }
-        //Acomodamos datos del producto simple
-        array_push($optionsArray, array(
-            "option" => $option,
-            "sku" => $child->getSku() ,
-            "price" => $childPrice ,
-            "imageUrl" => $imageUrl,
-            "originalPrice" => $childOriginalPrice,
-            "description" => $child->getName(),
-            "stock" => $this->getStock($child)
-        ));
-    }
+    [$variantOptions, $variants] = $this->getProductOptions($productModel, $imageUrl);
+    [$originalPrice, $price] = $this->getBaseProductPrices($variantOptions);
 
-    foreach ($variantsArray as $key => $variants)
-    {
-        array_push($productArray["variants"], array(
-            "name" => $key,
-            "options" => $variants
-        ));
-    }
-
-    //aca las variantOptions
-    if (empty($optionsArray)) {
-        return array();
-    }
-    $productArray["variantOptions"] = $optionsArray;
-    $configProductPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
-    $productArray["price"] =  ($configProductPrice == 0 ) ? $highestPrice : $configProductPrice ;
+    $productArray = array(
+      "id" => $productModel->getId(),
+      "sku" => $productModel->getSku(),
+      "description" => $productModel->getName(),
+      "price" => $price,
+      "originalPrice" => $originalPrice,
+      "imageUrl" => $imageUrl,
+      "variants" => $variants,
+      "variantOptions" => $variantOptions
+    );
 
     return $productArray;
   }
 
+  private function getProductOptions($productModel, $defaultImageUrl)
+  {
+    $childProducts = $productModel->getTypeInstance()->getUsedProducts($productModel);
+
+    $optionsArray = array();
+    $variantsArray = array();
+
+    foreach ($childProducts as $child) {
+
+      $option = array();
+      foreach ($this->variantAttributes as $attribute) {
+        $attributeValue = $child->getResource()
+          ->getAttribute($attribute->getAttributeCode())
+          ->getFrontend()
+          ->getValue($child);
+        $option[] = $attributeValue;
+        if (!isset($variantsArray[$attribute->getFrontendLabel()])) {
+          $variantsArray[$attribute->getFrontendLabel()] = array();
+          array_push($variantsArray[$attribute->getFrontendLabel() ], $attributeValue);
+        } else {
+          if (!in_array($attributeValue, $variantsArray[$attribute->getFrontendLabel()])) {
+            $variantsArray[$attribute->getFrontendLabel() ][] = $attributeValue;
+          }
+        }
+      }
+      $imageUrl = $this->getImage($child) ?? $defaultImageUrl;
+      $childPrice = (float)number_format($child->getFinalPrice(), 2, ".", "");
+      $childOriginalPrice = (float)number_format($child->getPriceInfo()->getPrice('regular_price')->getValue(), 2, ".", "");
+
+      $optionsArray[] = array(
+        "option" => $option,
+        "sku" => $child->getSku(),
+        "price" => $childPrice,
+        "imageUrl" => $imageUrl,
+        "originalPrice" => $childOriginalPrice,
+        "description" => $child->getName(),
+        "stock" => $this->getStock($child)
+      );
+    }
+
+    $variants = array();
+
+    foreach ($variantsArray as $key => $v) {
+      $variants[] = array(
+        "name" => $key,
+        "options" => $v
+      );
+    }
+
+    if (empty($optionsArray)) {
+      return [[], []];
+    }
+
+    return [$optionsArray, $variants];
+  }
+
+  private function getBaseProductPrices($variantOptions)
+  {
+    if (count($variantOptions) < 1) {
+      return [null, null];
+    }
+    $price = $variantOptions[0]["price"];
+    $originalPrice = $variantOptions[0]["originalPrice"];
+    foreach ($variantOptions as $option) {
+      if ($option["price"] < $price) {
+        $price = $option["price"];
+        $originalPrice = $option["originalPrice"];
+      }
+    }
+    return [$price, $originalPrice];
+  }
 }

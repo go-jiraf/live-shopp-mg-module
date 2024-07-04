@@ -19,8 +19,8 @@ class SimpleProductBuilder extends Product implements ProductInterface{
           "stock" => $this->getStock($productModel)
       );
 
-      $productArray["price"] = (float)number_format($productModel->getFinalPrice() , 2, ",", "");
-      $productArray["originalPrice"] = (float)number_format($productModel->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ",", "");
+      $productArray["price"] = (float)number_format($productModel->getFinalPrice() , 2, ".", "");
+      $productArray["originalPrice"] = (float)number_format($productModel->getPriceInfo()->getPrice('regular_price')->getValue() , 2, ".", "");
       $productArray["imageUrl"] = $this->getImage($productModel);
 
       return $productArray;

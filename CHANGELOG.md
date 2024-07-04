@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.2] 2024-07-03
+
+### Fix
+
+- In configurable products, use the base product "price" field for promotional price (lowest price), and "originalPrice" for original price (highest price)
+
+- The prices formatting is fixed to take in account decimal values
+
+- The configurable products variants (children) that are out of stock are being now added to the product state representation anyway, with stock zero.
+
+### Refactor
+
+- Refactor code on ConfigurableProductBuilder.php
+
 ## [1.3.0] 2024-03-12
 
 ### Feature
